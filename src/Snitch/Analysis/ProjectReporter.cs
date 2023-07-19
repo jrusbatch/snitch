@@ -39,7 +39,7 @@ namespace Snitch.Analysis
                 {
                     var table = new Table().BorderColor(Color.Grey).Expand();
                     table.AddColumns("[grey]Package[/]", "[grey]Referenced by[/]");
-                    foreach (var item in result.CanBeRemoved)
+                    foreach (var item in result.CanBeRemoved.OrderBy(x => x.Package.Name, StringComparer.OrdinalIgnoreCase))
                     {
                         table.AddRow(
                             $"[green]{item.Package.Name}[/]",
