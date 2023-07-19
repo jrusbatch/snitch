@@ -98,16 +98,23 @@ namespace Snitch.Analysis
             // Add the project to the built list.
             built.Add(Path.GetFileName(path), project);
 
-            // Get the package references.
-            foreach (var packageReference in result.PackageReferences)
+            if (File.Exists(Path.Combine(Path.GetDirectoryName(project.Path)!, "web.config")) && result.TargetFramework is "net48")
             {
-                if (packageReference.Value.TryGetValue("Version", out var version))
-                {
-                    var privateAssets = packageReference.Value.GetValueOrDefault("PrivateAssets");
-
-                    project.Packages.Add(new Package(packageReference.Key, version, privateAssets));
-                }
+                _console.MarkupLine($"Skipping package reference analysis for full-framework web project [aqua]{project.Name}[/]");
+                _console.WriteLine();
             }
+            else
+            {
+                // Get the package references.
+                foreach (var packageReference in result.PackageReferences)
+                {
+                    if (packageReference.Value.TryGetValue("Version", out var version))
+                    {
+                        var privateAssets = packageReference.Value.GetValueOrDefault("PrivateAssets");
+
+                        project.Packages.Add(new Package(packageReference.Key, version, privateAssets));
+                    }
+                }
 
             // Analyze all project references.
             foreach (var projectReference in result.ProjectReferences)
