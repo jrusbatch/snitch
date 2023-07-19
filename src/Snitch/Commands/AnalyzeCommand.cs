@@ -37,6 +37,10 @@ namespace Snitch.Commands
             [Description("One or more project references to exclude.")]
             public string[]? Skip { get; set; }
 
+            [CommandOption("--skip-tests")]
+            [Description("Skip test projects.")]
+            public bool SkipTests { get; set; }
+
             [CommandOption("-s|--strict")]
             [Description("Returns exit code 0 only if no conflicts were found.")]
             public bool Strict { get; set; }
@@ -62,6 +66,11 @@ namespace Snitch.Commands
             projectsToAnalyze.RemoveAll(p =>
             {
                 var projectName = Path.GetFileNameWithoutExtension(p);
+                if (settings.SkipTests && projectName.Contains("Test", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
                 return settings.Skip?.Contains(projectName, StringComparer.OrdinalIgnoreCase) ?? false;
             });
 
@@ -84,6 +93,7 @@ namespace Snitch.Commands
                         projectToAnalyze,
                         targetFramework,
                         settings.Skip,
+                        settings.SkipTests,
                         projectCache);
 
                     // Update the cache of built projects.

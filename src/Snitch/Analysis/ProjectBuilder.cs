@@ -21,13 +21,14 @@ namespace Snitch.Analysis
             string path,
             string? tfm,
             string[]? skip,
+            bool skipTests,
             IEnumerable<Project>? cache = null)
         {
             var manager = new AnalyzerManager();
             var built = cache?.ToDictionary(x => x.File, x => x, StringComparer.OrdinalIgnoreCase)
                 ?? new Dictionary<string, Project>(StringComparer.OrdinalIgnoreCase);
 
-            var project = Build(manager, path, tfm, skip, built);
+            var project = Build(manager, path, tfm, skip, skipTests, built);
 
             // Get all dependencies which are all built projects minus the project.
             var dependencies = new HashSet<Project>(built.Values, new ProjectComparer());
@@ -41,6 +42,7 @@ namespace Snitch.Analysis
             string path,
             string? tfm,
             string[]? skip,
+            bool skipTests,
             Dictionary<string, Project> built,
             int indentation = 0)
         {
@@ -120,11 +122,16 @@ namespace Snitch.Analysis
             foreach (var projectReference in result.ProjectReferences)
             {
                 var projectReferencePath = PathUtility.GetPathRelativeToProject(project, projectReference);
+                var projectName = Path.GetFileNameWithoutExtension(projectReferencePath);
+
+                if ((skipTests && projectName.Contains("Test", StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    continue;
+                }
 
                 if (skip != null)
                 {
-                    var projectName = Path.GetFileNameWithoutExtension(projectReferencePath);
-                    if (skip.Contains(projectName, StringComparer.OrdinalIgnoreCase))
+                    if (skip?.Contains(projectName, StringComparer.OrdinalIgnoreCase) is true)
                     {
                         continue;
                     }
@@ -141,7 +148,7 @@ namespace Snitch.Analysis
                     continue;
                 }
 
-                var analyzedProjectReference = Build(manager, projectReferencePath, project.TargetFramework, skip, built, indentation + 1);
+                var analyzedProjectReference = Build(manager, projectReferencePath, project.TargetFramework, skip, skipTests, built, indentation + 1);
                 project.ProjectReferences.Add(analyzedProjectReference);
             }
 
